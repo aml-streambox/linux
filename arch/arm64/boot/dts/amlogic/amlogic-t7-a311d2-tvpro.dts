@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * Copyright (c) 2022 Wesion, Inc. All rights reserved.
+ * Minimal Linux v7.1 TVPRO bring-up device tree.
+ *
+ * This intentionally starts from upstream T7 support and only carries the
+ * board data needed before enabling the 5.15 vendor multimedia stack.
  */
 
 /dts-v1/;
@@ -10,8 +13,8 @@
 #include "amlogic-t7.dtsi"
 
 / {
-	model = "Khadas VIM4";
-	compatible = "khadas,vim4", "amlogic,a311d2", "amlogic,t7";
+	model = "CoreLab A311D2-TVPro";
+	compatible = "corelab,a311d2-tvpro", "amlogic,a311d2", "amlogic,t7";
 
 	aliases {
 		serial0 = &uart_a;
@@ -24,11 +27,11 @@
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x0 0x0 0x0 0xE0000000
-			0x1 0x0 0x0 0xE0000000
-			0x2 0x0 0x0 0x40000000>; /* 8 GB */
-		linux,usable-memory = <0x0 0x0 0x0 0xE0000000
-				       0x1 0x0 0x0 0xE0000000
+		reg = <0x0 0x0 0x0 0xe0000000
+		       0x1 0x0 0x0 0xe0000000
+		       0x2 0x0 0x0 0x40000000>; /* 8 GB */
+		linux,usable-memory = <0x0 0x0 0x0 0xe0000000
+				       0x1 0x0 0x0 0xe0000000
 				       0x2 0x0 0x0 0x40000000>;
 	};
 
