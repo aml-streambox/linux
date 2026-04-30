@@ -22,6 +22,7 @@ properties:
               - amlogic,g12a-ddr-thermal
           - const: amlogic,g12a-thermal
       - const: amlogic,a1-cpu-thermal
+      - const: amlogic,t7-thermal
 
   reg:
     maxItems: 1
@@ -39,6 +40,16 @@ properties:
     description: phandle to the ao-secure syscon
     $ref: /schemas/types.yaml#/definitions/phandle
 
+  secure-monitor:
+    description: phandle to the secure-monitor firmware node
+    $ref: /schemas/types.yaml#/definitions/phandle
+
+  amlogic,thermal-sensor-id:
+    description: secure-monitor thermal calibration sensor index
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+    maximum: 6
+
   '#thermal-sensor-cells':
     const: 0
 
@@ -47,7 +58,20 @@ required:
   - reg
   - interrupts
   - clocks
-  - amlogic,ao-secure
+
+allOf:
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: amlogic,t7-thermal
+    then:
+      required:
+        - secure-monitor
+        - amlogic,thermal-sensor-id
+    else:
+      required:
+        - amlogic,ao-secure
 
 unevaluatedProperties: false
 

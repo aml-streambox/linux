@@ -234,6 +234,62 @@
 
 };
 
+&{/} {
+	thermal-zones {
+		a73_thermal: a73-thermal {
+			polling-delay = <1000>;
+			polling-delay-passive = <100>;
+			thermal-sensors = <&a73_temp>;
+
+			trips {
+				a73_passive: a73-passive {
+					temperature = <85000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+
+				a73_hot: a73-hot {
+					temperature = <95000>;
+					hysteresis = <2000>;
+					type = "hot";
+				};
+
+				a73_critical: a73-critical {
+					temperature = <110000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+
+		a53_thermal: a53-thermal {
+			polling-delay = <1000>;
+			polling-delay-passive = <100>;
+			thermal-sensors = <&a53_temp>;
+
+			trips {
+				a53_passive: a53-passive {
+					temperature = <85000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+
+				a53_hot: a53-hot {
+					temperature = <95000>;
+					hysteresis = <2000>;
+					type = "hot";
+				};
+
+				a53_critical: a53-critical {
+					temperature = <110000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+	};
+};
+
 &apb4 {
 	clkc_periphs: clock-controller@0 {
 		compatible = "amlogic,t7-peripherals-clkc";
@@ -401,6 +457,30 @@
 };
 
 &{/soc} {
+	a73_temp: temperature-sensor@fe020000 {
+		compatible = "amlogic,t7-thermal";
+		reg = <0x0 0xfe020000 0x0 0x50>;
+		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&clkc_periphs CLKID_TS>;
+		assigned-clocks = <&clkc_periphs CLKID_TS>;
+		assigned-clock-rates = <500000>;
+		#thermal-sensor-cells = <0>;
+		amlogic,thermal-sensor-id = <1>;
+		secure-monitor = <&sm>;
+	};
+
+	a53_temp: temperature-sensor@fe022000 {
+		compatible = "amlogic,t7-thermal";
+		reg = <0x0 0xfe022000 0x0 0x50>;
+		interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&clkc_periphs CLKID_TS>;
+		assigned-clocks = <&clkc_periphs CLKID_TS>;
+		assigned-clock-rates = <500000>;
+		#thermal-sensor-cells = <0>;
+		amlogic,thermal-sensor-id = <2>;
+		secure-monitor = <&sm>;
+	};
+
 	ethmac: ethernet@fdc00000 {
 		compatible = "amlogic,meson-g12a-dwmac",
 			     "snps,dwmac-4.00",

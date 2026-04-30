@@ -14,6 +14,7 @@ enum {
 	SM_GET_CHIP_ID,
 	SM_A1_PWRC_SET,
 	SM_A1_PWRC_GET,
+	SM_TSENSOR_CALIB_READ,
 };
 
 struct meson_sm_firmware;

@@ -19,6 +19,7 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/io.h>
+#include <linux/firmware/meson/meson_sm.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -82,12 +83,14 @@ struct amlogic_thermal_soc_calib_data {
 /**
  * struct amlogic_thermal_data
  * @u_efuse_off: register offset to read fused calibration value
+ * @use_sm_calib: read fused calibration value through the secure monitor
  * @calibration_parameters: calibration parameters structure pointer
  * @regmap_config: regmap config for the device
  * This structure is required for configuration of amlogic thermal driver.
  */
 struct amlogic_thermal_data {
 	int u_efuse_off;
+	bool use_sm_calib;
 	const struct amlogic_thermal_soc_calib_data *calibration_parameters;
 	const struct regmap_config *regmap_config;
 };
@@ -97,9 +100,11 @@ struct amlogic_thermal {
 	const struct amlogic_thermal_data *data;
 	struct regmap *regmap;
 	struct regmap *sec_ao_map;
+	struct meson_sm_firmware *fw;
 	struct clk *clk;
 	struct thermal_zone_device *tzd;
 	u32 trim_info;
+	u32 tsensor_id;
 };
 
 /*
@@ -138,8 +143,18 @@ static int amlogic_thermal_initialize(struct amlogic_thermal *pdata)
 	int ret = 0;
 	int ver;
 
-	regmap_read(pdata->sec_ao_map, pdata->data->u_efuse_off,
-		    &pdata->trim_info);
+	if (pdata->data->use_sm_calib) {
+		ret = meson_sm_call_read(pdata->fw, &pdata->trim_info,
+					 sizeof(pdata->trim_info),
+					 SM_TSENSOR_CALIB_READ, pdata->tsensor_id,
+					 0, 0, 0, 0);
+		if (ret < 0)
+			return dev_err_probe(&pdata->pdev->dev, ret,
+					     "failed to read thermal calibration\n");
+	} else {
+		regmap_read(pdata->sec_ao_map, pdata->data->u_efuse_off,
+			    &pdata->trim_info);
+	}
 
 	ver = TSENSOR_TRIM_VERSION(pdata->trim_info);
 
@@ -226,6 +241,12 @@ static const struct amlogic_thermal_data amlogic_thermal_a1_cpu_param = {
 	.regmap_config = &amlogic_thermal_regmap_config_g12a,
 };
 
+static const struct amlogic_thermal_data amlogic_thermal_t7_param = {
+	.use_sm_calib = true,
+	.calibration_parameters = &amlogic_thermal_g12a,
+	.regmap_config = &amlogic_thermal_regmap_config_g12a,
+};
+
 static const struct of_device_id of_amlogic_thermal_match[] = {
 	{
 		.compatible = "amlogic,g12a-ddr-thermal",
@@ -239,6 +260,10 @@ static const struct of_device_id of_amlogic_thermal_match[] = {
 		.compatible = "amlogic,a1-cpu-thermal",
 		.data = &amlogic_thermal_a1_cpu_param,
 	},
+	{
+		.compatible = "amlogic,t7-thermal",
+		.data = &amlogic_thermal_t7_param,
+	},
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, of_amlogic_thermal_match);
@@ -247,6 +272,7 @@ static int amlogic_thermal_probe(struct platform_device *pdev)
 {
 	struct amlogic_thermal *pdata;
 	struct device *dev = &pdev->dev;
+	struct device_node *sm_np;
 	void __iomem *base;
 	int ret;
 
@@ -271,11 +297,31 @@ static int amlogic_thermal_probe(struct platform_device *pdev)
 	if (IS_ERR(pdata->clk))
 		return dev_err_probe(dev, PTR_ERR(pdata->clk), "failed to get clock\n");
 
-	pdata->sec_ao_map = syscon_regmap_lookup_by_phandle
-		(pdev->dev.of_node, "amlogic,ao-secure");
-	if (IS_ERR(pdata->sec_ao_map)) {
-		dev_err(dev, "syscon regmap lookup failed.\n");
-		return PTR_ERR(pdata->sec_ao_map);
+	if (pdata->data->use_sm_calib) {
+		ret = of_property_read_u32(pdev->dev.of_node,
+					   "amlogic,thermal-sensor-id",
+					   &pdata->tsensor_id);
+		if (ret)
+			return dev_err_probe(dev, ret,
+					     "missing thermal sensor id\n");
+
+		sm_np = of_parse_phandle(pdev->dev.of_node, "secure-monitor", 0);
+		if (!sm_np)
+			return dev_err_probe(dev, -EINVAL,
+					     "missing secure monitor phandle\n");
+
+		pdata->fw = meson_sm_get(sm_np);
+		of_node_put(sm_np);
+		if (!pdata->fw)
+			return dev_err_probe(dev, -EPROBE_DEFER,
+					     "secure monitor not ready\n");
+	} else {
+		pdata->sec_ao_map = syscon_regmap_lookup_by_phandle
+			(pdev->dev.of_node, "amlogic,ao-secure");
+		if (IS_ERR(pdata->sec_ao_map)) {
+			dev_err(dev, "syscon regmap lookup failed.\n");
+			return PTR_ERR(pdata->sec_ao_map);
+		}
 	}
 
 	pdata->tzd = devm_thermal_of_zone_register(&pdev->dev,
