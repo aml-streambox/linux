@@ -366,6 +366,15 @@
 	};
 };
 
+&gpio {
+	status_led_hog: status-led-hog {
+		gpio-hog;
+		gpios = <GPIOM_10 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "status-led";
+	};
+};
+
 &periphs_pinctrl {
 	eth_pins: eth-pins {
 		mux {
