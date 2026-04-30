@@ -10,6 +10,7 @@
 
 #include <linux/clk.h>
 #include <linux/dma-mapping.h>
+#include <linux/io.h>
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/of.h>
@@ -124,9 +125,33 @@ static const struct xhci_plat_priv xhci_plat_brcm = {
 	.quirks = XHCI_RESET_ON_RESUME | XHCI_SUSPEND_RESUME_CLKS,
 };
 
+#define AML_T7_CRG_GCTL		0x20fc
+#define AML_T7_CRG_GCTL_DEV_MODE	BIT(0)
+
+static int xhci_plat_amlogic_t7_crg_init_quirk(struct usb_hcd *hcd)
+{
+	u32 val;
+
+	if (!hcd->regs)
+		return 0;
+
+	val = readl(hcd->regs + AML_T7_CRG_GCTL);
+	writel(val & ~AML_T7_CRG_GCTL_DEV_MODE, hcd->regs + AML_T7_CRG_GCTL);
+
+	return 0;
+}
+
+static const struct xhci_plat_priv xhci_plat_amlogic_t7_crg = {
+	.quirks = XHCI_NO_64BIT_SUPPORT | XHCI_RESET_ON_RESUME,
+	.init_quirk = xhci_plat_amlogic_t7_crg_init_quirk,
+};
+
 static const struct of_device_id usb_xhci_of_match[] = {
 	{
 		.compatible = "generic-xhci",
+	}, {
+		.compatible = "amlogic,t7-crg-xhci",
+		.data = &xhci_plat_amlogic_t7_crg,
 	}, {
 		.compatible = "xhci-platform",
 	}, {

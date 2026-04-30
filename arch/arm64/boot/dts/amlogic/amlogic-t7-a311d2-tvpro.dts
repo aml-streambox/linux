@@ -417,7 +417,7 @@
 
 &{/soc} {
 	ethmac: ethernet@fdc00000 {
-		compatible = "amlogic,meson-axg-dwmac",
+		compatible = "amlogic,meson-g12a-dwmac",
 			     "snps,dwmac-4.00",
 			     "snps,dwmac";
 		reg = <0x0 0xfdc00000 0x0 0x10000>,
@@ -434,6 +434,10 @@
 		phy-mode = "rgmii";
 		phy-handle = <&external_phy>;
 		amlogic,tx-delay-ns = <2>;
+		rx-internal-delay-ps = <2000>;
+		internal_phy = <2>;
+		mc_val = <0x1621>;
+		cali_val = <0xa0000>;
 		rx-fifo-depth = <4096>;
 		tx-fifo-depth = <2048>;
 		status = "okay";
@@ -486,28 +490,24 @@
 		phys = <&usb2_phy0>, <&usb2_phy1>;
 		phy-names = "usb2-phy0", "usb2-phy1";
 
-		dwc2: usb@fdd00000 {
-			compatible = "amlogic,meson-g12a-usb", "snps,dwc2";
-			reg = <0x0 0xfdd00000 0x0 0x40000>;
+		xhci2: usb@fdd00000 {
+			compatible = "amlogic,t7-crg-xhci", "generic-xhci";
+			reg = <0x0 0xfdd00000 0x0 0x8000>;
 			interrupts = <GIC_SPI 131 IRQ_TYPE_EDGE_RISING>;
 			clocks = <&clkc_periphs CLKID_SYS_USB>;
-			clock-names = "otg";
-			phys = <&usb2_phy1>;
-			phy-names = "usb2-phy";
-			dr_mode = "peripheral";
-			g-rx-fifo-size = <192>;
-			g-np-tx-fifo-size = <128>;
-			g-tx-fifo-size = <128 128 16 16 16>;
+			clock-names = "core";
+			dr_mode = "host";
+			usb2-lpm-disable;
 		};
 
-		dwc3: usb@fde00000 {
-			compatible = "snps,dwc3";
-			reg = <0x0 0xfde00000 0x0 0x100000>;
+		xhci3: usb@fde00000 {
+			compatible = "amlogic,t7-crg-xhci", "generic-xhci";
+			reg = <0x0 0xfde00000 0x0 0x8000>;
 			interrupts = <GIC_SPI 130 IRQ_TYPE_EDGE_RISING>;
+			clocks = <&clkc_periphs CLKID_SYS_USB>;
+			clock-names = "core";
 			dr_mode = "host";
-			snps,dis_u2_susphy_quirk;
-			snps,quirk-frame-length-adjustment = <0x20>;
-			snps,parkmode-disable-ss-quirk;
+			usb2-lpm-disable;
 		};
 	};
 

@@ -76,6 +76,8 @@
  */
 #define PRG_ETH1_CFG_RXCLK_DLY		GENMASK(19, 16)
 
+#define MESON8B_DWMAC_EXTERNAL_PHY	2
+
 struct meson8b_dwmac;
 
 struct meson8b_dwmac_data {
@@ -379,6 +381,30 @@ static int meson8b_init_prg_eth(struct meson8b_dwmac *dwmac)
 	return 0;
 }
 
+static void meson8b_apply_amlogic_config(struct platform_device *pdev,
+						 struct meson8b_dwmac *dwmac)
+{
+	struct device_node *np = pdev->dev.of_node;
+	u32 internal_phy, val;
+
+	/*
+	 * Vendor T7/T7C kernels apply these board-specific PRG_ETH writes
+	 * after stmmac is probed. TVPRO/VIM4 external RGMII PHY traffic depends
+	 * on these final values even though standard delay properties are present.
+	 */
+	if (!of_property_read_u32(np, "mc_val", &val))
+		writel(val, dwmac->regs + PRG_ETH0);
+
+	if (of_property_read_u32(np, "internal_phy", &internal_phy) ||
+	    internal_phy != MESON8B_DWMAC_EXTERNAL_PHY)
+		return;
+
+	if (of_property_read_u32(np, "cali_val", &val))
+		val = 0;
+
+	writel(val, dwmac->regs + PRG_ETH1);
+}
+
 static int meson8b_dwmac_probe(struct platform_device *pdev)
 {
 	struct plat_stmmacenet_data *plat_dat;
@@ -461,7 +487,13 @@ static int meson8b_dwmac_probe(struct platform_device *pdev)
 
 	plat_dat->bsp_priv = dwmac;
 
-	return stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
+	ret = stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
+	if (ret)
+		return ret;
+
+	meson8b_apply_amlogic_config(pdev, dwmac);
+
+	return 0;
 }
 
 static const struct meson8b_dwmac_data meson8b_dwmac_data = {
