@@ -436,6 +436,8 @@ endif
 KCONFIG_CONFIG	?= .config
 export KCONFIG_CONFIG
 
+export COMMON_DRIVERS_DIR ?= common_drivers
+
 # SHELL used by kbuild
 CONFIG_SHELL := sh
 
@@ -586,6 +588,8 @@ LINUXINCLUDE    := \
 		-I$(objtree)/arch/$(SRCARCH)/include/generated \
 		-I$(srctree)/include \
 		-I$(objtree)/include \
+		-I$(srctree)/$(COMMON_DRIVERS_DIR)/include \
+		-I$(srctree)/$(COMMON_DRIVERS_DIR)/include/uapi \
 		$(USERINCLUDE)
 
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE
@@ -816,6 +820,14 @@ ifeq ($(KBUILD_EXTMOD),)
 core-y		:=
 drivers-y	:=
 libs-y		:= lib/
+drivers-$(CONFIG_AMLOGIC_COMMON_CLK_T7_DISPLAY) += $(COMMON_DRIVERS_DIR)/drivers/clk/meson/
+drivers-$(CONFIG_AMLOGIC_SECMON) += $(COMMON_DRIVERS_DIR)/drivers/secmon/
+drivers-$(CONFIG_AMLOGIC_CPU_INFO) += $(COMMON_DRIVERS_DIR)/drivers/cpu_info/
+drivers-$(CONFIG_AMLOGIC_POWER) += $(COMMON_DRIVERS_DIR)/drivers/power/
+drivers-$(CONFIG_AMLOGIC_EFUSE_UNIFYKEY) += $(COMMON_DRIVERS_DIR)/drivers/efuse_unifykey/
+drivers-$(CONFIG_AMLOGIC_MEDIA_MODULE) += $(COMMON_DRIVERS_DIR)/drivers/media/
+drivers-$(CONFIG_AMLOGIC_DRM) += $(COMMON_DRIVERS_DIR)/drivers/drm/
+drivers-$(CONFIG_DRM_MESON_T7_VENDOR) += $(COMMON_DRIVERS_DIR)/drivers/drm/meson-t7/
 endif # KBUILD_EXTMOD
 
 # The all: target is the default when no target is given on the

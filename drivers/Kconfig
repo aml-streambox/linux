@@ -167,6 +167,8 @@ source "drivers/platform/Kconfig"
 
 source "drivers/clk/Kconfig"
 
+source "$(COMMON_DRIVERS_DIR)/drivers/clk/meson/Kconfig"
+
 source "drivers/hwspinlock/Kconfig"
 
 source "drivers/clocksource/Kconfig"
@@ -252,5 +254,80 @@ source "drivers/hte/Kconfig"
 source "drivers/cdx/Kconfig"
 
 source "drivers/resctrl/Kconfig"
+
+menu "Amlogic vendor drivers"
+
+config AMLOGIC_DRIVER
+	bool "Amlogic vendor driver support"
+	default n
+	help
+	  Enable local Amlogic vendor drivers from COMMON_DRIVERS_DIR.
+
+config AMLOGIC_ZAPPER_CUT
+	bool "Cut non-basic Amlogic display features"
+	default y
+	help
+	  Disable optional vendor display paths that are not required for basic
+	  HDMI scanout, such as LCD panel glue, VRR, and FRL-heavy paths.
+
+config AMLOGIC_REMOVE_OLD
+	bool "Remove old Amlogic SoC compatibility paths"
+	default y if AMLOGIC_ZAPPER_CUT
+	help
+	  Drop legacy pre-G12 media/display code paths from the selected vendor
+	  driver subset. T7 display bring-up only needs the modern paths.
+
+config AMLOGIC_KERNEL_VERSION
+	int "Amlogic vendor kernel baseline"
+	default 14515
+	help
+	  Numeric vendor baseline used by common_drivers compatibility checks.
+
+if AMLOGIC_DRIVER
+
+source "$(COMMON_DRIVERS_DIR)/drivers/secmon/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/cpu_info/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/power/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/efuse_unifykey/Kconfig"
+
+config AMLOGIC_MEDIA_MODULE
+	tristate "Amlogic multimedia support module"
+	default n
+	select AMLOGIC_SECMON
+	select AMLOGIC_CPU_INFO
+	select AMLOGIC_POWER
+	help
+	  Build the selected Amlogic media common/vout objects as aml_media.
+
+config AMLOGIC_MEDIA_ENABLE
+	bool "Amlogic multimedia support"
+	default n
+
+config AMLOGIC_MEDIA_COMMON
+	bool "Amlogic media common services"
+	depends on AMLOGIC_MEDIA_ENABLE
+	default n
+
+config AMLOGIC_MEDIA_DRIVERS
+	bool "Amlogic media display drivers"
+	depends on AMLOGIC_MEDIA_COMMON
+	default n
+
+if AMLOGIC_MEDIA_COMMON
+source "$(COMMON_DRIVERS_DIR)/drivers/media/common/Kconfig"
+endif
+
+if AMLOGIC_MEDIA_DRIVERS
+source "$(COMMON_DRIVERS_DIR)/drivers/media/vout/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/media/video_sink/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/media/enhancement/Kconfig"
+endif
+
+source "$(COMMON_DRIVERS_DIR)/drivers/drm/Kconfig"
+endif
+
+source "$(COMMON_DRIVERS_DIR)/drivers/drm/meson-t7/Kconfig"
+
+endmenu
 
 endmenu

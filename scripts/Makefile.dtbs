@@ -123,8 +123,10 @@ DTC_FLAGS += $(DTC_FLAGS_$(target-stem))
 DTC_FLAGS += $(if $(filter $(patsubst $(obj)/%,%,$@), $(base-dtb-y)), -@)
 
 DTC_INCLUDE := $(srctree)/scripts/dtc/include-prefixes
+DTC_INCLUDE += $(wildcard $(srctree)/$(COMMON_DRIVERS_DIR)/include)
 
-dtc_cpp_flags = -Wp,-MMD,$(depfile).pre.tmp -nostdinc -I $(DTC_INCLUDE) -undef -D__DTS__
+dtc_cpp_flags = -Wp,-MMD,$(depfile).pre.tmp -nostdinc \
+	$(addprefix -I ,$(DTC_INCLUDE)) -undef -D__DTS__
 
 dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
 
