@@ -289,6 +289,7 @@ source "$(COMMON_DRIVERS_DIR)/drivers/secmon/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/cpu_info/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/power/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/efuse_unifykey/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/sound/Kconfig"
 
 config AMLOGIC_MEDIA_MODULE
 	tristate "Amlogic multimedia support module"
