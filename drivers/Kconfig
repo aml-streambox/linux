@@ -321,6 +321,9 @@ endif
 if AMLOGIC_MEDIA_DRIVERS
 source "$(COMMON_DRIVERS_DIR)/drivers/media/vout/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/media/video_sink/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/media/vrr/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/media/frame_sync/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/media/vin/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/media/enhancement/Kconfig"
 endif
 
