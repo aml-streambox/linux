@@ -234,6 +234,11 @@ struct optee_smc_get_shm_config_result {
 	unsigned long settings;
 };
 
+/* Amlogic vendor extension: report whether dynamic SHM is usable. */
+#define OPTEE_SMC_FUNCID_GET_DYN_SHM_STATS	0xE005
+#define OPTEE_SMC_GET_DYN_SHM_STATS \
+	OPTEE_SMC_FAST_CALL_VAL(OPTEE_SMC_FUNCID_GET_DYN_SHM_STATS)
+
 /*
  * Exchanges capabilities between normal world and secure world
  *

@@ -1369,6 +1369,29 @@ static bool optee_msg_api_revision_is_compatible(optee_invoke_fn *invoke_fn)
 	return false;
 }
 
+static bool optee_amlogic_t7_uses_static_shm(void)
+{
+	return of_machine_is_compatible("t7_a311d2_tvpro4g") ||
+	       of_machine_is_compatible("t7_a311d2_tvpro8g") ||
+	       of_machine_is_compatible("t7c_a311d2_tvpro4g") ||
+	       of_machine_is_compatible("t7c_a311d2_tvpro8g") ||
+	       of_machine_is_compatible("t7_a311d2_vim4") ||
+	       of_machine_is_compatible("t7c_a311d2_kvim4n");
+}
+
+static bool optee_msg_dynamic_shm_is_usable(optee_invoke_fn *invoke_fn,
+						   bool *usable)
+{
+	struct arm_smccc_res res;
+
+	invoke_fn(OPTEE_SMC_GET_DYN_SHM_STATS, 0, 0, 0, 0, 0, 0, 0, &res);
+	if (res.a0 != OPTEE_SMC_RETURN_OK)
+		return false;
+
+	*usable = res.a1 == 1;
+	return true;
+}
+
 static bool optee_msg_exchange_capabilities(optee_invoke_fn *invoke_fn,
 					    u32 *sec_caps, u32 *max_notif_value,
 					    unsigned int *rpc_param_count)
@@ -1765,6 +1788,17 @@ static int optee_probe(struct platform_device *pdev)
 					     &rpc_param_count)) {
 		pr_warn("capabilities mismatch\n");
 		return -EINVAL;
+	}
+
+	if (sec_caps & OPTEE_SMC_SEC_CAP_DYNAMIC_SHM) {
+		bool dynamic_shm_usable;
+
+		if ((optee_msg_dynamic_shm_is_usable(invoke_fn,
+							&dynamic_shm_usable) &&
+		     !dynamic_shm_usable) || optee_amlogic_t7_uses_static_shm()) {
+			sec_caps &= ~OPTEE_SMC_SEC_CAP_DYNAMIC_SHM;
+			pr_info("dynamic shared memory disabled by platform firmware quirk\n");
+		}
 	}
 
 	/*
