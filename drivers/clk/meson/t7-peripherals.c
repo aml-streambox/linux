@@ -28,6 +28,7 @@
 #define DSPB_CLK_CTRL0		0xa0
 #define CLK12_24_CTRL		0xa8
 #define ANAKIN_CLK_CTRL		0xac
+#define VDIN_MEAS_CLK_CTRL	0xf8
 #define MIPI_CSI_PHY_CLK_CTRL	0x10c
 #define MIPI_ISP_CLK_CTRL	0x110
 #define TS_CLK_CTRL		0x158
@@ -929,6 +930,17 @@ static T7_COMP_SEL(pwm_ao_h, PWM_CLK_AO_GH_CTRL, 25, 0x3, t7_pwm_parents);
 static T7_COMP_DIV(pwm_ao_h, PWM_CLK_AO_GH_CTRL, 16, 8);
 static T7_COMP_GATE(pwm_ao_h, PWM_CLK_AO_GH_CTRL, 24, 0);
 
+static const struct clk_parent_data t7_vdin_meas_parents[] = {
+	{ .fw_name = "xtal", },
+	{ .fw_name = "fdiv4", },
+	{ .fw_name = "fdiv3", },
+	{ .fw_name = "fdiv5", },
+};
+
+static T7_COMP_SEL(vdin_meas, VDIN_MEAS_CLK_CTRL, 9, 0x7, t7_vdin_meas_parents);
+static T7_COMP_DIV(vdin_meas, VDIN_MEAS_CLK_CTRL, 0, 7);
+static T7_COMP_GATE(vdin_meas, VDIN_MEAS_CLK_CTRL, 8, 0);
+
 static const struct clk_parent_data t7_sys_pclk_parents = { .fw_name = "sys" };
 
 #define T7_SYS_PCLK(_name, _reg, _bit, _flags) \
@@ -1161,6 +1173,9 @@ static struct clk_hw *t7_peripherals_hw_clks[] = {
 	[CLKID_PWM_AO_H_SEL]		= &t7_pwm_ao_h_sel.hw,
 	[CLKID_PWM_AO_H_DIV]		= &t7_pwm_ao_h_div.hw,
 	[CLKID_PWM_AO_H]		= &t7_pwm_ao_h.hw,
+	[CLKID_VDIN_MEAS_SEL]		= &t7_vdin_meas_sel.hw,
+	[CLKID_VDIN_MEAS_DIV]		= &t7_vdin_meas_div.hw,
+	[CLKID_VDIN_MEAS_GATE]		= &t7_vdin_meas.hw,
 	[CLKID_SYS_DDR]			= &t7_sys_ddr.hw,
 	[CLKID_SYS_DOS]			= &t7_sys_dos.hw,
 	[CLKID_SYS_MIPI_DSI_A]		= &t7_sys_mipi_dsi_a.hw,
