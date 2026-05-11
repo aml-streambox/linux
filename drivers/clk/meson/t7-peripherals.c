@@ -31,6 +31,10 @@
 #define VDIN_MEAS_CLK_CTRL	0xf8
 #define MIPI_CSI_PHY_CLK_CTRL	0x10c
 #define MIPI_ISP_CLK_CTRL	0x110
+#define VDEC_CLK_CTRL		0x140
+#define VDEC3_CLK_CTRL		0x148
+#define WAVE521_CLK_CTRL	0x150
+#define WAVE521_CLK_CTRL2	0x154
 #define TS_CLK_CTRL		0x158
 #define MALI_CLK_CTRL		0x15c
 #define ETH_CLK_CTRL		0x164
@@ -643,6 +647,66 @@ static T7_COMP_SEL(mipi_isp, MIPI_ISP_CLK_CTRL, 9, 0x7, t7_mipi_isp_parents);
 static T7_COMP_DIV(mipi_isp, MIPI_ISP_CLK_CTRL, 0, 7);
 static T7_COMP_GATE(mipi_isp, MIPI_ISP_CLK_CTRL, 8, 0);
 
+static const struct clk_parent_data t7_vdec_parents[] = {
+	{ .fw_name = "fdiv2p5", },
+	{ .fw_name = "fdiv3", },
+	{ .fw_name = "fdiv4", },
+	{ .fw_name = "fdiv5", },
+	{ .fw_name = "fdiv7", },
+	{ .fw_name = "hifi", },
+	{ .fw_name = "gp0", },
+	{ .fw_name = "xtal", },
+};
+
+static T7_COMP_SEL(hcodec_p0, VDEC_CLK_CTRL, 25, 0x7, t7_vdec_parents);
+static T7_COMP_DIV(hcodec_p0, VDEC_CLK_CTRL, 16, 7);
+static T7_COMP_GATE(hcodec_p0, VDEC_CLK_CTRL, 24, 0);
+
+static T7_COMP_SEL(hcodec_p1, VDEC3_CLK_CTRL, 25, 0x7, t7_vdec_parents);
+static T7_COMP_DIV(hcodec_p1, VDEC3_CLK_CTRL, 16, 7);
+static T7_COMP_GATE(hcodec_p1, VDEC3_CLK_CTRL, 24, 0);
+
+static struct clk_regmap t7_hcodec_mux = {
+	.data = &(struct clk_regmap_mux_data){
+		.offset = VDEC3_CLK_CTRL,
+		.mask = 0x1,
+		.shift = 31,
+	},
+	.hw.init = &(struct clk_init_data) {
+		.name = "hcodec_mux",
+		.ops = &clk_regmap_mux_ops,
+		.parent_hws = (const struct clk_hw *[]) {
+			&t7_hcodec_p0.hw,
+			&t7_hcodec_p1.hw,
+		},
+		.num_parents = 2,
+		.flags = CLK_SET_RATE_PARENT,
+	},
+};
+
+static const struct clk_parent_data t7_wave_parents[] = {
+	{ .fw_name = "xtal", },
+	{ .fw_name = "fdiv4", },
+	{ .fw_name = "fdiv3", },
+	{ .fw_name = "fdiv5", },
+	{ .fw_name = "fdiv7", },
+	{ .fw_name = "mpll2", },
+	{ .fw_name = "mpll3", },
+	{ .fw_name = "gp1", },
+};
+
+static T7_COMP_SEL(wave_a, WAVE521_CLK_CTRL2, 9, 0x7, t7_wave_parents);
+static T7_COMP_DIV(wave_a, WAVE521_CLK_CTRL2, 0, 7);
+static T7_COMP_GATE(wave_a, WAVE521_CLK_CTRL2, 8, 0);
+
+static T7_COMP_SEL(wave_b, WAVE521_CLK_CTRL, 9, 0x7, t7_wave_parents);
+static T7_COMP_DIV(wave_b, WAVE521_CLK_CTRL, 0, 7);
+static T7_COMP_GATE(wave_b, WAVE521_CLK_CTRL, 8, 0);
+
+static T7_COMP_SEL(wave_c, WAVE521_CLK_CTRL, 25, 0x7, t7_wave_parents);
+static T7_COMP_DIV(wave_c, WAVE521_CLK_CTRL, 16, 7);
+static T7_COMP_GATE(wave_c, WAVE521_CLK_CTRL, 24, 0);
+
 static struct clk_regmap t7_ts_div = {
 	.data = &(struct clk_regmap_div_data){
 		.offset = TS_CLK_CTRL,
@@ -1087,6 +1151,22 @@ static struct clk_hw *t7_peripherals_hw_clks[] = {
 	[CLKID_MIPI_ISP_SEL]		= &t7_mipi_isp_sel.hw,
 	[CLKID_MIPI_ISP_DIV]		= &t7_mipi_isp_div.hw,
 	[CLKID_MIPI_ISP]		= &t7_mipi_isp.hw,
+	[CLKID_HCODEC_P0_SEL]		= &t7_hcodec_p0_sel.hw,
+	[CLKID_HCODEC_P0_DIV]		= &t7_hcodec_p0_div.hw,
+	[CLKID_HCODEC_P0]		= &t7_hcodec_p0.hw,
+	[CLKID_HCODEC_P1_SEL]		= &t7_hcodec_p1_sel.hw,
+	[CLKID_HCODEC_P1_DIV]		= &t7_hcodec_p1_div.hw,
+	[CLKID_HCODEC_P1]		= &t7_hcodec_p1.hw,
+	[CLKID_HCODEC_MUX]		= &t7_hcodec_mux.hw,
+	[CLKID_WAVE_A_SEL]		= &t7_wave_a_sel.hw,
+	[CLKID_WAVE_A_DIV]		= &t7_wave_a_div.hw,
+	[CLKID_WAVE_A_GATE]		= &t7_wave_a.hw,
+	[CLKID_WAVE_B_SEL]		= &t7_wave_b_sel.hw,
+	[CLKID_WAVE_B_DIV]		= &t7_wave_b_div.hw,
+	[CLKID_WAVE_B_GATE]		= &t7_wave_b.hw,
+	[CLKID_WAVE_C_SEL]		= &t7_wave_c_sel.hw,
+	[CLKID_WAVE_C_DIV]		= &t7_wave_c_div.hw,
+	[CLKID_WAVE_C_GATE]		= &t7_wave_c.hw,
 	[CLKID_TS_DIV]			= &t7_ts_div.hw,
 	[CLKID_TS]			= &t7_ts.hw,
 	[CLKID_MALI_0_SEL]		= &t7_mali_0_sel.hw,
