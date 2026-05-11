@@ -12,6 +12,8 @@
 #include <linux/types.h>
 
 struct dma_heap;
+struct device;
+struct dma_buf;
 
 /**
  * struct dma_heap_ops - ops to operate on a given heap
@@ -43,6 +45,15 @@ struct dma_heap_export_info {
 void *dma_heap_get_drvdata(struct dma_heap *heap);
 
 const char *dma_heap_get_name(struct dma_heap *heap);
+
+struct device *dma_heap_get_dev(struct dma_heap *heap);
+
+struct dma_heap *dma_heap_find(const char *name);
+
+struct dma_buf *dma_heap_buffer_alloc(struct dma_heap *heap,
+                                      size_t len,
+                                      u32 fd_flags,
+                                      u64 heap_flags);
 
 struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info);
 

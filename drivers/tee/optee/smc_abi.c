@@ -1371,7 +1371,8 @@ static bool optee_msg_api_revision_is_compatible(optee_invoke_fn *invoke_fn)
 
 static bool optee_amlogic_t7_uses_static_shm(void)
 {
-	return of_machine_is_compatible("t7_a311d2_tvpro4g") ||
+	return of_machine_is_compatible("corelab,a311d2-tvpro") ||
+	       of_machine_is_compatible("t7_a311d2_tvpro4g") ||
 	       of_machine_is_compatible("t7_a311d2_tvpro8g") ||
 	       of_machine_is_compatible("t7c_a311d2_tvpro4g") ||
 	       of_machine_is_compatible("t7c_a311d2_tvpro8g") ||

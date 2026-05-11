@@ -289,6 +289,7 @@ source "$(COMMON_DRIVERS_DIR)/drivers/secmon/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/cpu_info/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/power/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/efuse_unifykey/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/tee/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/sound/Kconfig"
 
 config AMLOGIC_MEDIA_MODULE
@@ -314,6 +315,11 @@ config AMLOGIC_MEDIA_DRIVERS
 	depends on AMLOGIC_MEDIA_COMMON
 	default n
 
+config AMLOGIC_MEDIA_MULTI_DEC
+	bool "Support multi-instance decoding"
+	depends on AMLOGIC_MEDIA_DRIVERS
+	default n
+
 if AMLOGIC_MEDIA_COMMON
 source "$(COMMON_DRIVERS_DIR)/drivers/media/common/Kconfig"
 endif
@@ -325,6 +331,7 @@ source "$(COMMON_DRIVERS_DIR)/drivers/media/vrr/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/media/frame_sync/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/media/vin/Kconfig"
 source "$(COMMON_DRIVERS_DIR)/drivers/media/enhancement/Kconfig"
+source "$(COMMON_DRIVERS_DIR)/drivers/media_modules/Kconfig"
 endif
 
 source "$(COMMON_DRIVERS_DIR)/drivers/drm/Kconfig"

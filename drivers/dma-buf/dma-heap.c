@@ -29,6 +29,7 @@
  * @ops:		ops struct for this heap
  * @priv:		private data for this heap
  * @heap_devt:		heap device node
+ * @heap_dev:		heap class device
  * @list:		list head connecting to list of heaps
  * @heap_cdev:		heap char device
  *
@@ -39,6 +40,7 @@ struct dma_heap {
 	const struct dma_heap_ops *ops;
 	void *priv;
 	dev_t heap_devt;
+	struct device *heap_dev;
 	struct list_head list;
 	struct cdev heap_cdev;
 };
@@ -54,22 +56,32 @@ module_param(mem_accounting, bool, 0444);
 MODULE_PARM_DESC(mem_accounting,
 		 "Enable cgroup-based memory accounting for dma-buf heap allocations (default=false).");
 
-static int dma_heap_buffer_alloc(struct dma_heap *heap, size_t len,
-				 u32 fd_flags,
-				 u64 heap_flags)
+struct dma_buf *dma_heap_buffer_alloc(struct dma_heap *heap, size_t len,
+				      u32 fd_flags,
+				      u64 heap_flags)
 {
-	struct dma_buf *dmabuf;
-	int fd;
-
 	/*
 	 * Allocations from all heaps have to begin
 	 * and end on page boundaries.
 	 */
 	len = PAGE_ALIGN(len);
 	if (!len)
-		return -EINVAL;
+		return ERR_PTR(-EINVAL);
+	if (!heap)
+		return ERR_PTR(-EINVAL);
 
-	dmabuf = heap->ops->allocate(heap, len, fd_flags, heap_flags);
+	return heap->ops->allocate(heap, len, fd_flags, heap_flags);
+}
+EXPORT_SYMBOL_GPL(dma_heap_buffer_alloc);
+
+static int dma_heap_bufferfd_alloc(struct dma_heap *heap, size_t len,
+				   u32 fd_flags,
+				   u64 heap_flags)
+{
+	struct dma_buf *dmabuf;
+	int fd;
+
+	dmabuf = dma_heap_buffer_alloc(heap, len, fd_flags, heap_flags);
 	if (IS_ERR(dmabuf))
 		return PTR_ERR(dmabuf);
 
@@ -113,7 +125,7 @@ static long dma_heap_ioctl_allocate(struct file *file, void *data)
 	if (heap_allocation->heap_flags & ~DMA_HEAP_VALID_HEAP_FLAGS)
 		return -EINVAL;
 
-	fd = dma_heap_buffer_alloc(heap, heap_allocation->len,
+	fd = dma_heap_bufferfd_alloc(heap, heap_allocation->len,
 				   heap_allocation->fd_flags,
 				   heap_allocation->heap_flags);
 	if (fd < 0)
@@ -223,6 +235,32 @@ const char *dma_heap_get_name(struct dma_heap *heap)
 }
 EXPORT_SYMBOL_NS_GPL(dma_heap_get_name, "DMA_BUF_HEAP");
 
+struct device *dma_heap_get_dev(struct dma_heap *heap)
+{
+	return heap ? heap->heap_dev : NULL;
+}
+EXPORT_SYMBOL_GPL(dma_heap_get_dev);
+
+struct dma_heap *dma_heap_find(const char *name)
+{
+	struct dma_heap *h;
+
+	if (!name)
+		return NULL;
+
+	mutex_lock(&heap_list_lock);
+	list_for_each_entry(h, &heap_list, list) {
+		if (!strcmp(h->name, name)) {
+			mutex_unlock(&heap_list_lock);
+			return h;
+		}
+	}
+	mutex_unlock(&heap_list_lock);
+
+	return NULL;
+}
+EXPORT_SYMBOL_GPL(dma_heap_find);
+
 /**
  * dma_heap_add - adds a heap to dmabuf heaps
  * @exp_info: information needed to register this heap
@@ -282,6 +320,7 @@ struct dma_heap *dma_heap_add(const struct dma_heap_export_info *exp_info)
 		err_ret = ERR_CAST(dev_ret);
 		goto err2;
 	}
+	heap->heap_dev = dev_ret;
 
 	mutex_lock(&heap_list_lock);
 	/* check the name is unique */
