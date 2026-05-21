@@ -529,6 +529,7 @@ int drm_version(struct drm_device *dev, void *data,
 		       struct drm_file *file_priv)
 {
 	struct drm_version *version = data;
+	const char *date = "0";
 	int err;
 
 	version->version_major = dev->driver->major;
@@ -538,8 +539,10 @@ int drm_version(struct drm_device *dev, void *data,
 			dev->driver->name);
 
 	/* Driver date is deprecated. Userspace expects a non-empty string. */
+	if (!strcmp(dev->driver->name, "meson"))
+		date = "20220613";
 	if (!err)
-		err = drm_copy_field(version->date, &version->date_len, "0");
+		err = drm_copy_field(version->date, &version->date_len, date);
 	if (!err)
 		err = drm_copy_field(version->desc, &version->desc_len,
 				dev->driver->desc);
